@@ -5,7 +5,7 @@
 int test00(void){
     std::vector<CTCB::ChineseCharList>  copus;
 
-    ::CSV mat("/tmp/mat_test00.csv");
+    ::CSV mat("/data/mat_test00.csv");
     auto finalMat = mat.toMergedMatrix();
 
 
@@ -33,7 +33,7 @@ int test00(void){
 int test01(void){
     std::vector<CTCB::ChineseCharList>  copus;
 
-    ::CSV mat("/tmp/mat_test00.csv");
+    ::CSV mat("/data/mat_test00.csv");
     auto mergedMat = mat.toMergedMatrix();
 
 
@@ -57,7 +57,7 @@ int test01(void){
 
 
     printf("result:\n");
-    auto result = runCtc(mergedCopus, mergedMat);
+    auto result = CTCB::runCtc(mergedCopus, mergedMat);
     for (auto &v: result.charList_){
         printf("%d ", v);
     }

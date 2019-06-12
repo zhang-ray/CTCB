@@ -12,6 +12,63 @@
 #include <tuple>
 #include <unordered_map>
 
+
+
+namespace  {
+class CSV{
+private:
+    std::vector<std::vector<float>> data_;
+    size_t row_;
+    size_t col_;
+
+public:
+    size_t rows() const { return row_; }
+    size_t cols() const { return col_; }
+
+public:
+    CSV(const std::string& filename){
+        std::ifstream ifs(filename);
+        std::string line;
+
+        for (;std::getline(ifs, line);) {
+            std::vector<float> row;
+            std::string tmp;
+            for (size_t i = 0; i < line.size(); ++i){
+                char c = line[i];
+                if (c == ';' || i + 1 == line.size()){
+                    row.push_back(std::stod(tmp));
+                    tmp = "";
+                }
+                else{
+                    tmp.push_back(c);
+                }
+            }
+
+            if (!row.empty()) {
+                data_.push_back(row);
+            }
+        }
+
+        row_ = data_.size();
+        col_ = data_.front().size();
+    }
+
+    auto get(size_t row, size_t col) const{ return data_[row][col]; }
+    void set(size_t row, size_t col, float v){ data_[row][col] = v; }
+
+    auto toMergedMatrix() {
+        std::vector<float> result;
+        for (auto &line : data_){
+            for (auto &v: line){
+                result.push_back(v);
+            }
+        }
+        return result;
+    }
+};
+
+
+
 namespace CTCB{
 
 using ChineseCharList = std::vector<uint16_t>;
@@ -336,71 +393,8 @@ CommandResult CTCB(const std::vector<ChineseCharList> &copus, const std::vector<
     return bestBeam->getCharList();
 }
 
-}
 
 
-
-
-namespace  {
-class CSV{
-private:
-    std::vector<std::vector<float>> data_;
-    size_t row_;
-    size_t col_;
-
-public:
-    size_t rows() const { return row_; }
-    size_t cols() const { return col_; }
-
-public:
-    CSV(const std::string& filename){
-        std::ifstream ifs(filename);
-        std::string line;
-
-        for (;std::getline(ifs, line);) {
-            std::vector<float> row;
-            std::string tmp;
-            for (size_t i = 0; i < line.size(); ++i){
-                char c = line[i];
-                if (c == ';' || i + 1 == line.size()){
-                    row.push_back(std::stod(tmp));
-                    tmp = "";
-                }
-                else{
-                    tmp.push_back(c);
-                }
-            }
-
-            if (!row.empty()) {
-                data_.push_back(row);
-            }
-        }
-
-        row_ = data_.size();
-        col_ = data_.front().size();
-    }
-
-    auto get(size_t row, size_t col) const{ return data_[row][col]; }
-    void set(size_t row, size_t col, float v){ data_[row][col] = v; }
-
-    auto toMergedMatrix() {
-        std::vector<float> result;
-        for (auto &line : data_){
-            for (auto &v: line){
-                result.push_back(v);
-            }
-        }
-        return result;
-    }
-};
-
-
-
-}
-
-
-
-namespace  {
 auto runCtc(const std::vector<uint16_t> &mergedCopus, const std::vector<float> &mergedMat){
     std::vector<CTCB::ChineseCharList> copus;
 
@@ -417,6 +411,13 @@ auto runCtc(const std::vector<uint16_t> &mergedCopus, const std::vector<float> &
 
     return CTCB::CTCB(copus, mergedMat);
 }
+
+}
+
+
+
+
+
 }
 
 

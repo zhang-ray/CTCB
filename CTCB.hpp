@@ -264,6 +264,84 @@ private:
 
 
 
+
+
+
+class CommandResult{
+public:
+    ChineseCharList charList_;
+public:
+    CommandResult(const decltype(charList_) charList){
+        for (const auto &t : charList){
+            if (t!=PrefixTree::blankIdx_){
+                charList_.push_back(t);
+            }
+        }
+    }
+};
+
+
+
+CommandResult CTCB(const std::vector<ChineseCharList> &copus, const std::vector<double> &mergedMat ){
+    PrefixTree tree(copus);
+
+    const size_t maxT = mergedMat.size()/PrefixTree::dicLen_;
+
+    BeamList last;
+
+    last.addBeam(std::make_shared<Beam>(tree));
+
+    for (size_t t = 0; t < maxT; ++t) {
+        BeamList curr;
+        auto bestBeams = last.getBestBeams(25);
+
+        for (const auto &beam : bestBeams){
+            auto prNonBlank = 0.0;
+            if (!beam->isCharEmptyOrAllCtcBlank()){
+                auto theCharList = beam->getCharList();
+                auto labelIdx = theCharList[theCharList.size()-1];
+                prNonBlank = beam->getProbNonBlank() * mergedMat[t * PrefixTree::dicLen_ + labelIdx];
+            }
+
+            auto prBlank = beam->getProbTotal() * mergedMat[t * PrefixTree::dicLen_ + PrefixTree::blankIdx_];
+            curr.addBeam(beam->createChildBeam(PrefixTree::blankIdx_, prBlank, prNonBlank));
+
+            auto nextChars = beam->getNextChars();
+
+            for (const auto &c : nextChars){
+                auto labelIdx = c;
+                auto theCharList = beam->getCharList();
+                bool OK = false;
+                if (theCharList.size()>0){
+                    auto labelIdxOfLast = theCharList[theCharList.size()-1];
+                    if ((!beam->isCharEmptyOrAllCtcBlank()) &&(labelIdxOfLast == c)){
+                        prNonBlank = mergedMat[t * PrefixTree::dicLen_ + labelIdx] * beam->getProbBlank();
+                        OK=true;
+                    }
+                }
+
+                if(!OK){
+                    prNonBlank = mergedMat[t * PrefixTree::dicLen_ + labelIdx] * beam->getProbTotal();
+                }
+                curr.addBeam(beam->createChildBeam(c, 0, prNonBlank));
+            }
+        }
+        last=curr;
+    }
+
+    last.completeBeams(tree);
+
+    auto bestBeam = last.getBestBeams(1)[0];
+
+    return bestBeam->getCharList();
+}
+
+}
+
+
+
+
+namespace  {
 class CSV{
 private:
     std::vector<std::vector<double>> data_;
@@ -304,79 +382,41 @@ public:
 
     double get(size_t row, size_t col) const{ return data_[row][col]; }
     void set(size_t row, size_t col, double v){ data_[row][col] = v; }
-};
 
-
-
-
-
-class CommandResult{
-public:
-    ChineseCharList charList_;
-public:
-    CommandResult(const decltype(charList_) charList){
-        for (const auto &t : charList){
-            if (t!=PrefixTree::blankIdx_){
-                charList_.push_back(t);
+    auto toMergedMatrix() {
+        std::vector<double> result;
+        for (auto &line : data_){
+            for (auto &v: line){
+                result.push_back(v);
             }
         }
+        return result;
     }
 };
 
 
 
-CommandResult CTCB(const std::vector<ChineseCharList> &copus, const CSV &mat ){
-    PrefixTree tree(copus);
+}
 
-    const size_t maxT = mat.rows();
 
-    BeamList last;
 
-    last.addBeam(std::make_shared<Beam>(tree));
+namespace  {
+auto runCtc(const std::vector<uint16_t> &mergedCopus, const std::vector<double> &mergedMat){
+    std::vector<CTCB::ChineseCharList> copus;
 
-    for (size_t t = 0; t < maxT; ++t) {
-        BeamList curr;
-        auto bestBeams = last.getBestBeams(25);
-
-        for (const auto &beam : bestBeams){
-            auto prNonBlank = 0.0;
-            if (!beam->isCharEmptyOrAllCtcBlank()){
-                auto theCharList = beam->getCharList();
-                auto labelIdx = theCharList[theCharList.size()-1];
-                prNonBlank = beam->getProbNonBlank() * mat.get(t, labelIdx);
-            }
-
-            auto prBlank = beam->getProbTotal() * mat.get(t, PrefixTree::blankIdx_);
-            curr.addBeam(beam->createChildBeam(PrefixTree::blankIdx_, prBlank, prNonBlank));
-
-            auto nextChars = beam->getNextChars();
-
-            for (const auto &c : nextChars){
-                auto labelIdx = c;
-                auto theCharList = beam->getCharList();
-                bool OK = false;
-                if (theCharList.size()>0){
-                    auto labelIdxOfLast = theCharList[theCharList.size()-1];
-                    if ((!beam->isCharEmptyOrAllCtcBlank()) &&(labelIdxOfLast == c)){
-                        prNonBlank = mat.get(t, labelIdx) * beam->getProbBlank();
-                        OK=true;
-                    }
-                }
-
-                if(!OK){
-                    prNonBlank = mat.get(t, labelIdx) * beam->getProbTotal();
-                }
-                curr.addBeam(beam->createChildBeam(c, 0, prNonBlank));
-            }
+    CTCB::ChineseCharList oneList;
+    for (auto & v : mergedCopus){
+        if (v!=0){
+            oneList.push_back(v);
         }
-        last=curr;
+        else {
+            copus.push_back(oneList);
+            oneList.clear();
+        }
     }
 
-    last.completeBeams(tree);
-
-    auto bestBeam = last.getBestBeams(1)[0];
-
-    return bestBeam->getCharList();
+    return CTCB::CTCB(copus, mergedMat);
+}
 }
 
-}
+

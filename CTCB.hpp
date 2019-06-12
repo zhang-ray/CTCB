@@ -282,7 +282,7 @@ public:
 
 
 
-CommandResult CTCB(const std::vector<ChineseCharList> &copus, const std::vector<double> &mergedMat ){
+CommandResult CTCB(const std::vector<ChineseCharList> &copus, const std::vector<float> &mergedMat ){
     PrefixTree tree(copus);
 
     const size_t maxT = mergedMat.size()/PrefixTree::dicLen_;
@@ -344,7 +344,7 @@ CommandResult CTCB(const std::vector<ChineseCharList> &copus, const std::vector<
 namespace  {
 class CSV{
 private:
-    std::vector<std::vector<double>> data_;
+    std::vector<std::vector<float>> data_;
     size_t row_;
     size_t col_;
 
@@ -358,7 +358,7 @@ public:
         std::string line;
 
         for (;std::getline(ifs, line);) {
-            std::vector<double> row;
+            std::vector<float> row;
             std::string tmp;
             for (size_t i = 0; i < line.size(); ++i){
                 char c = line[i];
@@ -380,11 +380,11 @@ public:
         col_ = data_.front().size();
     }
 
-    double get(size_t row, size_t col) const{ return data_[row][col]; }
-    void set(size_t row, size_t col, double v){ data_[row][col] = v; }
+    auto get(size_t row, size_t col) const{ return data_[row][col]; }
+    void set(size_t row, size_t col, float v){ data_[row][col] = v; }
 
     auto toMergedMatrix() {
-        std::vector<double> result;
+        std::vector<float> result;
         for (auto &line : data_){
             for (auto &v: line){
                 result.push_back(v);
@@ -401,7 +401,7 @@ public:
 
 
 namespace  {
-auto runCtc(const std::vector<uint16_t> &mergedCopus, const std::vector<double> &mergedMat){
+auto runCtc(const std::vector<uint16_t> &mergedCopus, const std::vector<float> &mergedMat){
     std::vector<CTCB::ChineseCharList> copus;
 
     CTCB::ChineseCharList oneList;

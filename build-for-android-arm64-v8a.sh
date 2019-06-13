@@ -11,8 +11,3 @@ exit 1 | \
 # build 
 exit 1 | \
 make -j8
-
-# push and run
-adb push ctcb-test00 /system/bin/ \
-&& \
-adb shell ctcb-test00

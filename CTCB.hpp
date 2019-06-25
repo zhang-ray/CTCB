@@ -265,9 +265,9 @@ public:
 class BeamList{
 public:
     void addBeam(const std::shared_ptr<Beam>& beam){
-        auto iter = m_beams.find(beam->getCharList());
-        if (iter == m_beams.end()) {
-            m_beams[beam->getCharList()] = beam;
+        auto iter = beams_.find(beam->getCharList());
+        if (iter == beams_.end()) {
+            beams_[beam->getCharList()] = beam;
         }
         else {
             iter->second->mergeBeam(beam);
@@ -276,7 +276,7 @@ public:
 
     auto getBestBeams(const size_t beamWidth) const {
         typedef std::pair<ChineseCharList, std::shared_ptr<Beam>> KeyValueType;
-        std::vector<KeyValueType> beams(m_beams.begin(), m_beams.end());
+        std::vector<KeyValueType> beams(beams_.begin(), beams_.end());
         std::sort(beams.begin(), beams.end(), [](const KeyValueType& a, const KeyValueType& b) {
             return a.second->getProbTotal() > b.second->getProbTotal();
         });
@@ -291,7 +291,7 @@ public:
     }
 
     auto completeBeams(const PrefixTree &tree){
-        for(auto kv : m_beams) {
+        for(auto kv : beams_) {
             auto lastPrefix = kv.second->devOfCharList_;
             if (lastPrefix.empty() || tree.isSentence(lastPrefix)){
                 continue;
@@ -316,7 +316,7 @@ public:
     }
 
 private:
-    std::unordered_map<ChineseCharList, std::shared_ptr<Beam>, ChineseCharListHasher> m_beams;
+    std::unordered_map<ChineseCharList, std::shared_ptr<Beam>, ChineseCharListHasher> beams_;
 };
 
 

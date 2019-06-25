@@ -304,12 +304,13 @@ public:
             }
             auto sentence = sentences[0];
 
-            auto startPoint = lastPrefix.size() - sentence.size();
-            for (;startPoint <0;){
+            auto startPoint = (int)(lastPrefix.size()) - (int)(sentence.size());
+            for (;startPoint < 0;){
                 startPoint += sentence.size();
             }
-            for (auto c : sentence){
-                kv.second->charList_.push_back(c);
+
+            for (auto index = startPoint; index < sentence.size(); index++){
+                kv.second->charList_.push_back(sentence[index]);
             }
         }
     }

@@ -38,8 +38,6 @@ JNIEXPORT jintArray JNICALL Java_com_z_r_runCtc(JNIEnv *env, jclass, jintArray j
         narr[i] = ctcResult.charList_[i];
     }
 
-    env->ReleaseIntArrayElements(result, narr, 0);
-
     return result;
 }
 
